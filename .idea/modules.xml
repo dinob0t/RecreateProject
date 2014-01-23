@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Recreate/Recreate.iml" filepath="$PROJECT_DIR$/Recreate/Recreate.iml" />
+      <module fileurl="file://$PROJECT_DIR$/RecreateProject.iml" filepath="$PROJECT_DIR$/RecreateProject.iml" />
+    </modules>
+  </component>
+</project>
+
