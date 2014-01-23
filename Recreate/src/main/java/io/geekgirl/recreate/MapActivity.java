@@ -6,10 +6,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
-import java.util.AbstractMap;
+import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
+
 import java.util.HashMap;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 
@@ -20,14 +25,27 @@ import android.support.v4.app.FragmentActivity;
  * installed/enabled/updated on a user's device.
  */
 public class MapActivity extends FragmentActivity
-        implements OnMapClickListener, OnMarkerClickListener {
+        implements OnMapClickListener, OnMarkerClickListener, OnMapLongClickListener {
     /**
      * Note that this may be null if the Google Play services APK is not available.
      */
+
+    private static final int WIDTH_MAX = 25;
+    private static final int HUE_MAX = 360;
+    private static final int ALPHA_MAX = 100;
+    private static final double DEFAULT_RADIUS = 100;
+    public static final double RADIUS_OF_EARTH_METERS = 6371009;
+
     private GoogleMap mMap;
     private HashMap<LatLng,Marker> markerMap;
     private Marker markerCurrent;
     private int markerNum;
+    private boolean setHomeBase;
+    private Marker homeBase;
+    private Circle homeBaseCircle;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,8 +98,10 @@ public class MapActivity extends FragmentActivity
 
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerClickListener(this);
+        mMap.setOnMapLongClickListener(this);
         markerMap = new HashMap<LatLng, Marker>();
         markerNum = 0;
+        setHomeBase = false;
         //mMap.setOnMarkerClickListener((OnMarkerClickListener) this);
     }
 
@@ -101,7 +121,34 @@ public class MapActivity extends FragmentActivity
 
         marker.remove();
         markerNum--;
-        return true;
+        return true; //set to false if want default action of centering map and displaying text
+
+    }
+
+    @Override
+    public void onMapLongClick(LatLng point) {
+
+        if (setHomeBase == true) {
+            homeBaseCircle.remove();
+        }
+        HomeBaseCircle homeBaseCircle = new HomeBaseCircle(point, DEFAULT_RADIUS);
+        setHomeBase = true;
+
+    }
+
+    private class HomeBaseCircle {
+        private double radius;
+        public HomeBaseCircle(LatLng center, double radius) {
+            this.radius = radius;
+            homeBaseCircle = mMap.addCircle(new CircleOptions()
+                    .center(center)
+                    .radius(radius)
+                    .strokeColor(Color.BLACK)
+                    .strokeWidth(0)
+                    .fillColor(Color.HSVToColor(
+                            ALPHA_MAX, new float[] {HUE_MAX, 1, 1})));
+
+        }
 
     }
 
