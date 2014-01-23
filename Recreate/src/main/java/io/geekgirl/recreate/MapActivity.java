@@ -58,10 +58,9 @@ public class MapActivity extends FragmentActivity
     private Marker markerCurrent;
     private int markerNum;
     private boolean setHomeBase;
-    private Marker homeBase;
     private Circle homeBaseCircle;
     private LocationClient mLocationClient;
-    private Location location;
+    private Location currentLocation;
 
 
     // These settings are the same as the settings for the map. They will in fact give you updates
@@ -159,10 +158,25 @@ public class MapActivity extends FragmentActivity
      */
     @Override
     public void onMapClick(LatLng point) {
-
-        markerCurrent = mMap.addMarker(new MarkerOptions().position(new LatLng(point.latitude,point.longitude)));
-        markerMap.put((LatLng) point,(Marker) markerCurrent);
-        markerNum++;
+        float[] distanceLocationtoAOE = new float[2];
+        float[] distanceMarkertoAOE = new float[2];
+        if (setHomeBase == false) {
+            Toast.makeText(this, "You must set an AOE first", Toast.LENGTH_SHORT).show();
+        } else {
+            Location.distanceBetween(currentLocation.getLatitude(),currentLocation.getLongitude(), homeBaseCircle.getCenter().latitude, homeBaseCircle.getCenter().longitude,distanceLocationtoAOE);
+            Location.distanceBetween(point.latitude,point.longitude, homeBaseCircle.getCenter().latitude, homeBaseCircle.getCenter().longitude,distanceMarkertoAOE);
+            if(distanceMarkertoAOE[0] <= DEFAULT_RADIUS ) {
+                if(distanceLocationtoAOE[0] <= DEFAULT_RADIUS ) {
+                    markerCurrent = mMap.addMarker(new MarkerOptions().position(new LatLng(point.latitude,point.longitude)));
+                    markerMap.put((LatLng) point,(Marker) markerCurrent);
+                    markerNum++;
+                } else {
+                    Toast.makeText(this, "You must move to within the AOE", Toast.LENGTH_SHORT).show();
+                }
+            } else{
+                Toast.makeText(this, "Marker outside of AOE", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     /**
@@ -229,7 +243,7 @@ public class MapActivity extends FragmentActivity
      */
     @Override
     public void onLocationChanged(Location location) {
-
+        currentLocation = location;
     }
 
     /**
