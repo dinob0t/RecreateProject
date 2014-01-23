@@ -12,8 +12,19 @@ import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
+
+
 import java.util.HashMap;
 
+import android.widget.Toast;
+import android.location.Location;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -25,7 +36,13 @@ import android.support.v4.app.FragmentActivity;
  * installed/enabled/updated on a user's device.
  */
 public class MapActivity extends FragmentActivity
-        implements OnMapClickListener, OnMarkerClickListener, OnMapLongClickListener {
+        implements OnMapClickListener,
+        OnMarkerClickListener,
+        OnMapLongClickListener,
+        ConnectionCallbacks,
+        OnConnectionFailedListener,
+        LocationListener,
+        OnMyLocationButtonClickListener {
     /**
      * Note that this may be null if the Google Play services APK is not available.
      */
@@ -33,7 +50,7 @@ public class MapActivity extends FragmentActivity
     private static final int WIDTH_MAX = 25;
     private static final int HUE_MAX = 360;
     private static final int ALPHA_MAX = 100;
-    private static final double DEFAULT_RADIUS = 100;
+    private static final double DEFAULT_RADIUS = 200;
     public static final double RADIUS_OF_EARTH_METERS = 6371009;
 
     private GoogleMap mMap;
@@ -43,8 +60,16 @@ public class MapActivity extends FragmentActivity
     private boolean setHomeBase;
     private Marker homeBase;
     private Circle homeBaseCircle;
+    private LocationClient mLocationClient;
+    private Location location;
 
 
+    // These settings are the same as the settings for the map. They will in fact give you updates
+    // at the maximal rates currently possible.
+    private static final LocationRequest REQUEST = LocationRequest.create()
+            .setInterval(5000)         // 5 seconds
+            .setFastestInterval(16)    // 16ms = 60fps
+            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
 
     @Override
@@ -52,12 +77,23 @@ public class MapActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map);
         setUpMapIfNeeded();
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+        setUpLocationClientIfNeeded();
+        mLocationClient.connect();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mLocationClient != null) {
+            mLocationClient.disconnect();
+        }
     }
 
     /**
@@ -84,7 +120,17 @@ public class MapActivity extends FragmentActivity
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();
+
             }
+        }
+    }
+
+    private void setUpLocationClientIfNeeded() {
+        if (mLocationClient == null) {
+            mLocationClient = new LocationClient(
+                    getApplicationContext(),
+                    this,  // ConnectionCallbacks
+                    this); // OnConnectionFailedListener
         }
     }
 
@@ -99,6 +145,9 @@ public class MapActivity extends FragmentActivity
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapLongClickListener(this);
+        mMap.setMyLocationEnabled(true);
+        mMap.setOnMyLocationButtonClickListener(this);
+
         markerMap = new HashMap<LatLng, Marker>();
         markerNum = 0;
         setHomeBase = false;
@@ -116,6 +165,9 @@ public class MapActivity extends FragmentActivity
         markerNum++;
     }
 
+    /**
+     * If tap on a marker
+     */
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
@@ -125,17 +177,26 @@ public class MapActivity extends FragmentActivity
 
     }
 
+
+    /**
+     * If long click on the map
+     */
     @Override
     public void onMapLongClick(LatLng point) {
 
         if (setHomeBase == true) {
             homeBaseCircle.remove();
         }
+
         HomeBaseCircle homeBaseCircle = new HomeBaseCircle(point, DEFAULT_RADIUS);
+        Toast.makeText(this, "AOE set", Toast.LENGTH_SHORT).show();
         setHomeBase = true;
 
     }
 
+    /**
+     * Construct a circle
+     */
     private class HomeBaseCircle {
         private double radius;
         public HomeBaseCircle(LatLng center, double radius) {
@@ -150,6 +211,59 @@ public class MapActivity extends FragmentActivity
 
         }
 
+    }
+
+    /**
+     * Button to get current Location. This demonstrates how to get the current Location as required
+     * without needing to register a LocationListener.
+     */
+    //public void showMyLocation(View view) {
+     //   if (mLocationClient != null && mLocationClient.isConnected()) {
+     //       String msg = "Location = " + mLocationClient.getLastLocation();
+     //       Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+     //   }
+   // }
+
+    /**
+     * Implementation of {@link LocationListener}.
+     */
+    @Override
+    public void onLocationChanged(Location location) {
+
+    }
+
+    /**
+     * Callback called when connected to GCore. Implementation of {@link ConnectionCallbacks}.
+     */
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        mLocationClient.requestLocationUpdates(
+                REQUEST,
+                this);  // LocationListener
+    }
+
+    /**
+     * Callback called when disconnected from GCore. Implementation of {@link ConnectionCallbacks}.
+     */
+    @Override
+    public void onDisconnected() {
+        // Do nothing
+    }
+
+    /**
+     * Implementation of {@link OnConnectionFailedListener}.
+     */
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        // Do nothing
+    }
+
+    @Override
+    public boolean onMyLocationButtonClick() {
+
+        // Return false so that we don't consume the event and the default behavior still occurs
+        // (the camera animates to the user's current position).
+        return false;
     }
 
 }
