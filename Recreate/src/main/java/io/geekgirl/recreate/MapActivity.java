@@ -4,6 +4,11 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
+import java.util.AbstractMap;
+import java.util.HashMap;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -14,11 +19,15 @@ import android.support.v4.app.FragmentActivity;
  * Notice how we deal with the possibility that the Google Play services APK is not
  * installed/enabled/updated on a user's device.
  */
-public class MapActivity extends FragmentActivity {
+public class MapActivity extends FragmentActivity
+        implements OnMapClickListener, OnMarkerClickListener {
     /**
      * Note that this may be null if the Google Play services APK is not available.
      */
     private GoogleMap mMap;
+    private HashMap<LatLng,Marker> markerMap;
+    private Marker markerCurrent;
+    private int markerNum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +77,32 @@ public class MapActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerClickListener(this);
+        markerMap = new HashMap<LatLng, Marker>();
+        markerNum = 0;
+        //mMap.setOnMarkerClickListener((OnMarkerClickListener) this);
     }
+
+    /**
+     * Listener for quick tap on screen
+     */
+    @Override
+    public void onMapClick(LatLng point) {
+
+        markerCurrent = mMap.addMarker(new MarkerOptions().position(new LatLng(point.latitude,point.longitude)));
+        markerMap.put((LatLng) point,(Marker) markerCurrent);
+        markerNum++;
+    }
+
+    @Override
+    public boolean onMarkerClick(final Marker marker) {
+
+        marker.remove();
+        markerNum--;
+        return true;
+
+    }
+
 }
